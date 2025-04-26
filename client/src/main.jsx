@@ -1,6 +1,3 @@
-import { io } from "socket.io-client";
-
-const socket = io("https://randomvideochatserver.onrender.com");
 import React from "react";
 import ReactDOM from "react-dom/client";
 import './index.css';
