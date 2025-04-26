@@ -1,14 +1,114 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rando Chat</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rando Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.6.0/dist/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react@18.1.0/umd/react.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18.1.0/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/babel-standalone@6.26.0/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100">
-  <h1>hello</h1>
-  <div id="root"></div>
+
+<body class="bg-gray-100 font-sans">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Initialize socket.io
+        const socket = io("https://randomvideochatserver.onrender.com", {
+            transports: ['websocket'],
+        });
+
+        function App() {
+            const [name, setName] = useState('');
+            const [photo, setPhoto] = useState('');
+            const [loggedIn, setLoggedIn] = useState(false);
+            const [socketConnected, setSocketConnected] = useState(false);
+
+            const handleLogin = () => {
+                if (name.trim() && photo.trim()) {
+                    localStorage.setItem('name', name);
+                    localStorage.setItem('photo', photo);
+                    setLoggedIn(true);
+                    socket.emit('join', { name, photo });
+                }
+            };
+
+            // Socket connection check
+            useEffect(() => {
+                socket.on('connect', () => {
+                    console.log('Socket connected!');
+                    setSocketConnected(true);
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Socket disconnected!');
+                    setSocketConnected(false);
+                });
+
+                // Clean up socket events on unmount
+                return () => {
+                    socket.off('connect');
+                    socket.off('disconnect');
+                };
+            }, []);
+
+            if (!loggedIn) {
+                return (
+                    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-green-400 to-blue-500">
+                        <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm">
+                            <h1 className="text-3xl font-bold text-center text-gray-700 mb-6">Welcome to Rando Chat</h1>
+                            <input
+                                className="border border-gray-300 p-3 mb-4 w-full rounded-lg"
+                                placeholder="Enter Your Name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
+                            <input
+                                className="border border-gray-300 p-3 mb-6 w-full rounded-lg"
+                                placeholder="Enter Photo URL"
+                                value={photo}
+                                onChange={(e) => setPhoto(e.target.value)}
+                            />
+                            <button
+                                className="w-full py-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition"
+                                onClick={handleLogin}
+                            >
+                                Enter Chat
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!socketConnected) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen bg-red-100">
+                        <p className="text-xl text-red-600">Connecting to server...</p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-500 to-green-500">
+                    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-sm text-center">
+                        <h1 className="text-3xl font-bold text-gray-700 mb-6">Welcome, {name}!</h1>
+                        <img src={photo} alt="Profile" className="w-24 h-24 rounded-full mb-6 mx-auto" />
+                        <p className="text-lg text-gray-700">You are now connected with a random user!</p>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the React app into the DOM
+        ReactDOM.render(<App />, document.getElementById("root"));
+    </script>
+
 </body>
+
 </html>
-    
