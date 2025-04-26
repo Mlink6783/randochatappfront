@@ -1,11 +1,12 @@
 // src/App.jsx
 import { useState, useEffect } from 'react';
-import socket from './socket'; // if you have socket.js
+import socket from './socket';
 
 function App() {
   const [name, setName] = useState('');
   const [photo, setPhoto] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
 
   const handleLogin = () => {
     if (name.trim() && photo.trim()) {
@@ -16,15 +17,23 @@ function App() {
     }
   };
 
+  // Socket connection check
   useEffect(() => {
-    const savedName = localStorage.getItem('name');
-    const savedPhoto = localStorage.getItem('photo');
-    if (savedName && savedPhoto) {
-      setName(savedName);
-      setPhoto(savedPhoto);
-      setLoggedIn(true);
-      socket.emit('join', { name: savedName, photo: savedPhoto });
-    }
+    socket.on('connect', () => {
+      console.log('Socket connected!');
+      setSocketConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Socket disconnected!');
+      setSocketConnected(false);
+    });
+
+    // Clean up socket events on unmount
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+    };
   }, []);
 
   if (!loggedIn) {
@@ -50,11 +59,18 @@ function App() {
     );
   }
 
+  if (!socketConnected) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-red-100">
+        <p>Connecting to server...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-green-100">
       <h1 className="text-2xl font-bold mb-4">Welcome, {name}!</h1>
       <img src={photo} alt="Profile" className="w-24 h-24 rounded-full mb-4" />
-      {/* Chat area will come here later */}
       <p>Matched user and messages will come here!</p>
     </div>
   );
